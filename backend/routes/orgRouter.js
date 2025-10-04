@@ -64,10 +64,10 @@ orgRouter.post("/create-quiz", authMiddleware(["organization"]), async (req, res
       organizationId
     });
 
-  // if (validQuestions.length !== questions.length) {
-      //console.log(validQuestions.length, questions.length);
-    //  return res.status(400).json({ msg: "Some questions not found or do not belong to your organization" });
-   // }
+  if (validQuestions.length !== questions.length) {
+      console.log(validQuestions.length, questions.length);
+      return res.status(400).json({ msg: "Some questions not found or do not belong to your organization" });
+    }
 
     // Create quiz
     const quiz = new quizModel({

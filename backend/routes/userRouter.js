@@ -15,12 +15,12 @@ const userRouter = express.Router();
 // Register
 userRouter.post("/register", async (req, res) => {
   try {
-    const { name, email, password, role, organizationId } = req.body;
+    const { name, email, password, role } = req.body;
     if (role === "admin") {
   return res.status(403).json({ error: "Cannot register as admin" });
 }
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new userModel({ name, email, password: hashedPassword, role, organizationId });
+    const user = new userModel({ name, email, password: hashedPassword, role });
     await user.save();
     res.json({ message: "User registered successfully" });
   } catch (err) {
@@ -31,7 +31,7 @@ const generateTokens = (user) => {
   const accessToken = jwt.sign(
     { id: user._id, email: user.email, role: user.role },
     process.env.JWT_SECRET,
-    { expiresIn: "15m" } // short-lived
+    { expiresIn: "1m" } // short-lived
   );
 
   const refreshToken = jwt.sign(
@@ -96,7 +96,7 @@ userRouter.post("/refresh", (req, res) => {
         process.env.JWT_SECRET,
         { expiresIn: "15m" }
       );
-
+    console.log("Refreshed token for user ID:", decoded.id , decoded);
       res.json({ accessToken });
     });
   } catch (err) {

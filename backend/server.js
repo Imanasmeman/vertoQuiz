@@ -11,8 +11,10 @@ dotenv.config();
 connectDB();
 
 const app = express();
-app.use(cors());
-
+app.use(cors({
+  origin: 'http://localhost:5173', // your frontend URL
+  credentials: true
+}));
 app.use(express.json());
 app.use(cookieParser());
 
@@ -20,7 +22,7 @@ app.use(cookieParser());
 app.get("/test" , (req,res)=>{
     res.status(200).json({message: "Server is running"})
 })
-app.use("/user" , userRouter )
+app.use("/auth" , userRouter )
 
 app.use("/org" , orgRouter)
 

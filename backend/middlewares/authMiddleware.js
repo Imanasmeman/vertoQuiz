@@ -33,6 +33,8 @@ const authMiddleware = (roles = []) => {
 
       // 4️⃣ Check role
       if (roles.length && !roles.includes(user.role)) {
+          console.log(user.email)
+         
         return res.status(403).json({ error: "You do not have permission" });
       }
 

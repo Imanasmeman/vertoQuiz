@@ -8,10 +8,6 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ["admin", "organization", "student"],
     default: "student"
-  },
-  organizationId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Organization"
   }
 });
 

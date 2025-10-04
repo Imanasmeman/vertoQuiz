@@ -13,23 +13,26 @@ appRouter.get("/all-quiz", authMiddleware(["student"]) ,async (req, res) => {
     console.log(email);
     const quizzes = await quizModel.find({
    allowedUsers: { $in: [email] }}).populate('questions');
-   const organizationname = await userModel.find({id:quizzes.organizationId});
+   
+   
     if (!quizzes) {
       return res.status(404).json({ error: "No quizzes found" });
     }
   
    
-  
-    const response = quizzes.map(q => ({
-  id: q._id,      
-  title: q.title,
-  description: q.description,
-  duration: q.duration,
-  deadline: q.deadline,
-  organization: organizationname.name
+  const response = await Promise.all(quizzes.map(async q => {
+
+  const org = await userModel.findById(q.organizationId);
+  console.log(org.name); 
+  return {
+    id: q._id,
+    title: q.title,
+    description: q.description,
+    duration: q.duration,
+    deadline: q.deadline,
+    organization: org.name 
+  };
 }));
-
-
 res.json(response);
     
     }catch (err) {
@@ -60,6 +63,9 @@ appRouter.get("/quiz/:id/start", authMiddleware(["student"]), async (req, res) =
       });
       await attempt.save();
     }
+    if(attempt.status === "completed"){
+      return res.status(400).json({ error: "Quiz already attempted" });
+    } 
 
     if (Date.now() > attempt.endTime) {
       attempt.status = "blocked";
@@ -78,7 +84,9 @@ appRouter.get("/quiz/:id/start", authMiddleware(["student"]), async (req, res) =
         options: q.options
         // ❌ don’t send correctAnswer
       })),
-      attemptId: attempt._id
+      attemptId: attempt._id,
+       startTime: attempt.startTime,
+        endTime: attempt.endTime
     });
   } catch (err) {
     res.status(500).json({ error: "Server error", details: err.message });
@@ -99,7 +107,9 @@ appRouter.post("/quiz/:id/submit", authMiddleware(["student"]), async (req, res)
       await attempt.save();
       return res.status(403).json({ error: "Time expired. Quiz blocked" });
     }
-
+   if(attempt.status === "completed"){
+      return res.status(400).json({ error: "Quiz already submitted" });
+    }
     const quiz = await quizModel.findById(quizId).populate("questions");
     let score = 0;
     const storedAnswers = [];
@@ -128,7 +138,30 @@ appRouter.post("/quiz/:id/submit", authMiddleware(["student"]), async (req, res)
   }
 });
 
-
+appRouter.get("/quiz-attempts", authMiddleware(["student"]), async (req, res) => {
+  try {
+    const { id: userId } = req.user;
+    const attempts = await quizAttemptModel.find({ userId });
+    
+    res.json(attempts);
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+})
+appRouter.get("/:id/quiz-attempt-detailed", authMiddleware(["student"]), async (req, res) => {
+  try {
+    const { id: attemptId } = req.params;
+    // Find by _id, not attemptId
+    const attempt = await quizAttemptModel
+      .findOne({ _id: attemptId })
+      .populate('quizId')
+      .populate('answers.questionId');
+    if (!attempt) return res.status(404).json({ error: "Attempt not found" });
+    res.json(attempt);
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 
 module.exports = appRouter;
