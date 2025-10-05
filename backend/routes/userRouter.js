@@ -48,6 +48,7 @@ userRouter.post("/login", async (req, res) => {
     const { email, password } = req.body;
 
     // find user
+    console.log(req.cookies.refreshToken);
     const user = await userModel.findOne({ email });
     if (!user) return res.status(404).json({ error: "User not found" });
 
@@ -57,15 +58,15 @@ userRouter.post("/login", async (req, res) => {
 
     // generate tokens
     const { accessToken, refreshToken } = generateTokens(user);
-
+  
     // send refresh token in HttpOnly cookie (safer than localStorage)
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: false, // set true if using HTTPS
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-    });
-
+   res.cookie("refreshToken", refreshToken, {
+  httpOnly: true,
+  secure:false   ,  //process.env.NODE_ENV === "production", // false for localhost
+  sameSite: "strict",
+  //path: "/",   // 👈 MUST also add this
+  maxAge: 7 * 24 * 60 * 60 * 1000
+});
     res.json({
       message: "Login successful",
       accessToken,
@@ -88,56 +89,41 @@ userRouter.post("/refresh", (req, res) => {
     const refreshToken = req.cookies.refreshToken;
     if (!refreshToken) return res.status(401).json({ error: "No refresh token" });
 
-    jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, (err, decoded) => {
-      if (err) return res.status(403).json({ error: "Invalid refresh token" });
+    jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, async (err, decoded) => {
+  if (err) return res.status(403).json({ error: "Invalid refresh token" });
 
-      const accessToken = jwt.sign(
-        { id: decoded.id },
-        process.env.JWT_SECRET,
-        { expiresIn: "15m" }
-      );
-    console.log("Refreshed token for user ID:", decoded.id , decoded);
-      res.json({ accessToken });
-    });
+  const accessToken = jwt.sign(
+    { id: decoded.id, email: decoded.email, role: decoded.role },
+    process.env.JWT_SECRET,
+    { expiresIn: "15m" }
+  );
+
+  const user = await userModel.findById(decoded.id).select("name email role");
+
+  res.json({ accessToken, user });
+});
+
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }
 });
 
-userRouter.post("/logout", (req, res) => {
-  res.clearCookie("refreshToken", { httpOnly: true, secure: false, sameSite: "strict" });
+userRouter.post("/logout", async(req, res) => {
+ res.clearCookie("refreshToken", { httpOnly: true, secure: false, sameSite: "strict" });
+  console.log("User logged out, refresh token cookie cleared");
+ // Should be undefined
   res.json({ message: "Logged out successfully" });
 });
 
 
-userRouter.get("/quiz", authMiddleware(["student"]) ,async (req, res) => {
+// Get user profile
+userRouter.get("/profile", authMiddleware(["student"]), async (req, res) => {
   try {
-    const { email } = req.user;
-    console.log(email);
-    const quizzes = await quizModel.find({
-   allowedUsers: { $in: [email] }}).populate('questions');
-   const organizationname = await userModel.find({id:quizzes.organizationId});
-    if (!quizzes) {
-      return res.status(404).json({ error: "No quizzes found" });
-    }
-   const isquizeAttempted =  quizAttemptModel.findOne({userId:req.user.id, quizId:quizzes._id});
-   if(isquizeAttempted){
-    return res.status(400).json({ error: "Quiz already attempted" });
-   }
-  
-    const response = quizzes.map(q => ({
-  title: q.title,
-  description: q.description,
-  duration: q.duration,
-  deadline: q.deadline,
-  questions: q.questions,
-  organization: organizationname.name
-}));
-
-
-res.json(response);
-    
-    }catch (err) {
+    const userId = req.user.id; // set by middleware
+    const user = await userModel.findById(userId).select("-password");
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json(user);
+  } catch(err) {
     res.status(500).json({ error: "Server error" });
   }
 });

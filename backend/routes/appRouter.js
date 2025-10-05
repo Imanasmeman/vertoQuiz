@@ -24,6 +24,7 @@ appRouter.get("/all-quiz", authMiddleware(["student"]) ,async (req, res) => {
 
   const org = await userModel.findById(q.organizationId);
   console.log(org.name); 
+  
   return {
     id: q._id,
     title: q.title,
@@ -103,7 +104,7 @@ appRouter.post("/quiz/:id/submit", authMiddleware(["student"]), async (req, res)
     if (!attempt) return res.status(400).json({ error: "Quiz not started" });
 
     if (Date.now() > attempt.endTime) {
-      attempt.status = "blocked";
+      attempt.status = "completed";
       await attempt.save();
       return res.status(403).json({ error: "Time expired. Quiz blocked" });
     }

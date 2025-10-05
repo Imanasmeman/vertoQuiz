@@ -1,4 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import Header from "./header";
+import Footer from "./footer";
 
 export default function QuizResult() {
   const location = useLocation();
@@ -12,7 +14,10 @@ export default function QuizResult() {
   }
 
   return (
+    <>
+    <Header/>
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-slate-100">
+    
       <div className="bg-white p-8 rounded-xl shadow w-full max-w-md text-center">
         <h2 className="text-2xl font-bold text-blue-700 mb-4">Quiz Result</h2>
         <p className="text-lg mb-2">
@@ -28,5 +33,7 @@ export default function QuizResult() {
         </button>
       </div>
     </div>
+    <Footer/>
+    </>
   );
 }

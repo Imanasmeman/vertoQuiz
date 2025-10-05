@@ -44,6 +44,8 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     await api.post("/auth/logout");
     setAccessToken(null);
+    setUser(null);
+    localStorage.removeItem("accessToken");
   };
 
   // Axios interceptor → auto refresh access token only if accessToken exists

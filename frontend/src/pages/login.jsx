@@ -8,15 +8,19 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
+
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
+      
       await login(email, password);
       navigate("/dashboard");
+     
     } catch (err) {
       alert(err.response?.data?.msg || "Login failed");
     }
   };
+ 
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-slate-200">

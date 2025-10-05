@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import axios from "../api/api";
+import { BookOpen } from "lucide-react";
 
 function shuffle(array) {
   return array
@@ -10,6 +11,29 @@ function shuffle(array) {
     .map((a) => a[1]);
 }
 
+const LEGEND = [
+  {
+    label: "Answered",
+    color: "bg-green-300",
+    shape: "rounded-full", // circle
+  },
+  {
+    label: "Marked for Review & Answered",
+    color: "bg-orange-300",
+    shape: "rounded-full", // circle
+  },
+  {
+    label: "Marked for Review (No Answer)",
+    color: "bg-yellow-300",
+    shape: "rounded-full", // circle
+  },
+  {
+    label: "Unanswered",
+    color: "bg-gray-200",
+    shape: "rounded", // square
+  },
+];
+
 export default function QuizStart() {
   const { id } = useParams();
   const { accessToken } = useAuth();
@@ -17,17 +41,21 @@ export default function QuizStart() {
 
   const [quiz, setQuiz] = useState(null);
   const [shuffledQuestions, setShuffledQuestions] = useState([]);
-  const [answers, setAnswers] = useState({});
+  const [answers, setAnswers] = useState(
+    () => JSON.parse(localStorage.getItem(`quiz-${id}-answers`) || "{}")
+  );
+  const [reviewLater, setReviewLater] = useState(
+    () => JSON.parse(localStorage.getItem(`quiz-${id}-reviewLater`) || "[]")
+  );
+
   const [error, setError] = useState("");
-  const [score, setScore] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [endTime, setEndTime] = useState(null);
   const [currentIdx, setCurrentIdx] = useState(0);
-  const [reviewLater, setReviewLater] = useState([]);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // Fetch quiz data
+  // Fetch quiz
   useEffect(() => {
     const fetchQuiz = async () => {
       try {
@@ -35,8 +63,17 @@ export default function QuizStart() {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         setQuiz(res.data);
-        const shuffled = shuffle(res.data.questions);
-        setShuffledQuestions(shuffled);
+
+        // Keep shuffled order consistent
+        const stored = JSON.parse(localStorage.getItem(`quiz-${id}-questions`));
+        if (stored) {
+          setShuffledQuestions(stored);
+        } else {
+          const shuffled = shuffle(res.data.questions);
+          setShuffledQuestions(shuffled);
+          localStorage.setItem(`quiz-${id}-questions`, JSON.stringify(shuffled));
+        }
+
         setEndTime(new Date(res.data.endTime));
       } catch (err) {
         setError(err.response?.data?.error || "Failed to load quiz");
@@ -45,14 +82,15 @@ export default function QuizStart() {
     fetchQuiz();
   }, [id, accessToken]);
 
-  // Timer
+  // Timer - submit only if time runs out and quiz not submitted yet
   useEffect(() => {
     if (!endTime || submitted) return;
     const updateTimeLeft = () => {
       const now = new Date();
       const left = Math.max(0, Math.floor((endTime - now) / 1000));
       setTimeLeft(left);
-      if (left <= 10 && !submitted) {
+      if (left <= 0 && !submitted) {
+        // Only auto submit on timeout
         handleSubmit();
       }
     };
@@ -61,6 +99,18 @@ export default function QuizStart() {
     return () => clearInterval(timer);
   }, [endTime, submitted]);
 
+  // Warn user before unload (back/navigation/close) if quiz incomplete
+  useEffect(() => {
+    const beforeUnloadHandler = (e) => {
+      if (!submitted && timeLeft > 0) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", beforeUnloadHandler);
+    return () => window.removeEventListener("beforeunload", beforeUnloadHandler);
+  }, [submitted, timeLeft]);
+
   function formatTime(secs) {
     const m = Math.floor(secs / 60);
     const s = secs % 60;
@@ -68,15 +118,22 @@ export default function QuizStart() {
   }
 
   const handleOptionChange = (questionId, selectedOption) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: selectedOption }));
+    const updated = { ...answers, [questionId]: selectedOption };
+    setAnswers(updated);
+    localStorage.setItem(`quiz-${id}-answers`, JSON.stringify(updated));
   };
 
   const handleReviewLater = (questionId) => {
-    setReviewLater((prev) =>
-      prev.includes(questionId)
-        ? prev.filter((id) => id !== questionId)
-        : [...prev, questionId]
-    );
+    setReviewLater((prev) => {
+      let updated;
+      if (prev.includes(questionId)) {
+        updated = prev.filter((qid) => qid !== questionId);
+      } else {
+        updated = [...prev, questionId];
+      }
+      localStorage.setItem(`quiz-${id}-reviewLater`, JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -95,6 +152,12 @@ export default function QuizStart() {
         },
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
+
+      // Clear storage after submission
+      localStorage.removeItem(`quiz-${id}-answers`);
+      localStorage.removeItem(`quiz-${id}-questions`);
+      localStorage.removeItem(`quiz-${id}-reviewLater`);
+
       navigate("/quiz-result", {
         state: {
           score: res.data.score,
@@ -104,90 +167,125 @@ export default function QuizStart() {
       });
     } catch (err) {
       setError(err.response?.data?.error || "Failed to submit quiz");
+      setSubmitted(false); // Allow retry on error
     }
   };
 
   if (!quiz) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="bg-white p-8 rounded shadow">Loading quiz...</div>
+        <div className="bg-white p-8 rounded shadow">Quiz no more available for attempt</div>
       </div>
     );
   }
 
-  // Sidebar tracking
-  const sidebar = (
-    <div className="w-48 bg-blue-50 p-4 rounded-xl shadow mr-8">
-      <h3 className="font-bold mb-2">Questions</h3>
-      <ul>
-        {shuffledQuestions.map((q, idx) => (
-          <li key={q._id} className="mb-2 flex items-center">
-            <button
-              className={`px-2 py-1 rounded text-xs ${
-                currentIdx === idx
-                  ? "bg-blue-600 text-white"
-                  : answers[q._id]
-                  ? "bg-green-200"
-                  : reviewLater.includes(q._id)
-                  ? "bg-yellow-200"
-                  : "bg-gray-200"
-              }`}
-              onClick={() => setCurrentIdx(idx)}
-              disabled={submitted}
-            >
-              Q{idx + 1}
-            </button>
-            {reviewLater.includes(q._id) && (
-              <span className="ml-2 text-yellow-600">★</span>
-            )}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-
-  // Confirmation modal
-  const confirmModal = showConfirm && (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded shadow text-center">
-        <h2 className="text-xl font-bold mb-4">Submit Quiz?</h2>
-        <p className="mb-4">Are you sure you want to submit your quiz?</p>
-        <button
-          className="bg-blue-600 text-white px-4 py-2 rounded mr-2"
-          onClick={handleSubmit}
-        >
-          Yes, Submit
-        </button>
-        <button
-          className="bg-gray-300 px-4 py-2 rounded"
-          onClick={() => setShowConfirm(false)}
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
-  );
-
-  // Main quiz view
   const q = shuffledQuestions[currentIdx];
 
+  const confirmModal =
+    showConfirm && (
+      <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div className="bg-white p-6 rounded shadow text-center">
+          <h2 className="text-xl font-bold mb-4">Submit Quiz?</h2>
+          <p className="mb-4">Are you sure you want to submit your quiz?</p>
+          <button
+            className="bg-blue-600 text-white px-4 py-2 rounded mr-2"
+            onClick={handleSubmit}
+          >
+            Yes, Submit
+          </button>
+          <button
+            className="bg-gray-300 px-4 py-2 rounded"
+            onClick={() => setShowConfirm(false)}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+
+  const getBtnStyle = (idx, qid) => {
+    if (currentIdx === idx) return "bg-blue-600 text-white rounded-full"; // current
+    if (reviewLater.includes(qid) && answers[qid])
+      return "bg-orange-300 text-black rounded-full"; // review + answered
+    if (reviewLater.includes(qid)) return "bg-yellow-300 text-black rounded-full"; // only review
+    if (answers[qid]) return "bg-green-300 text-black rounded-full"; // answered
+    return "bg-gray-200 text-black rounded"; // untouched
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-slate-100">
-      {confirmModal}
-      <div className="flex w-full max-w-3xl">
-        {sidebar}
-        <div className="bg-white p-8 rounded-xl shadow w-full">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-blue-700">{quiz.title}</h2>
-            <div className="text-lg font-mono bg-blue-100 px-3 py-1 rounded text-blue-700">
-              Time Left: {formatTime(timeLeft)}
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 to-slate-100">
+      {/* Navbar */}
+      <header className="bg-white shadow px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <BookOpen className="w-6 h-6 text-blue-600" />
+          <h1 className="text-xl font-bold text-blue-700">Quiz Platform</h1>
+        </div>
+        <div className="text-lg font-mono bg-blue-100 px-3 py-1 rounded text-blue-700">
+          Time Left: {formatTime(timeLeft)}
+        </div>
+      </header>
+
+      {/* Main */}
+      <main className="flex flex-1 w-full max-w-6xl mx-auto mt-6 px-4">
+        {/* Sidebar */}
+        <div className="w-64 bg-blue-50 p-4 rounded-xl shadow mr-8 h-fit">
+          <h3 className="font-bold mb-2">Questions</h3>
+          <div className="grid grid-cols-4 gap-2 mb-6">
+            {shuffledQuestions.map((question, idx) => (
+              <button
+                key={question._id}
+                className={`w-8 h-8 flex items-center justify-center transition-colors ${getBtnStyle(
+                  idx,
+                  question._id
+                )}`}
+                onClick={() => setCurrentIdx(idx)}
+                disabled={submitted}
+                title={
+                  reviewLater.includes(question._id) && answers[question._id]
+                    ? "Review & Answered"
+                    : reviewLater.includes(question._id)
+                    ? "Marked for Review"
+                    : answers[question._id]
+                    ? "Answered"
+                    : "Unanswered"
+                }
+              >
+                {idx + 1}
+              </button>
+            ))}
+          </div>
+
+          {/* Legend */}
+          <div className="mt-2 mb-2">
+            <h4 className="font-semibold mb-2 text-gray-900">Legend</h4>
+            <div className="flex flex-col gap-2">
+              {LEGEND.map((item, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <span
+                    className={`inline-block w-4 h-4 ${item.color} ${item.shape} border border-gray-300`}
+                  />
+                  <span className="text-sm text-gray-800">{item.label}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-2 text-xs text-gray-600">
+              • <span className="font-bold">Circle</span>: Answered or Marked for Review
+              <br /> • <span className="font-bold">Square</span>: Untouched
             </div>
           </div>
+        </div>
+
+        {/* Quiz Content */}
+        <div className="bg-white p-8 rounded-lg border border-gray-200 shadow w-full mb-6">
+          <h2 className="text-2xl font-bold text-blue-700 mb-4">{quiz.title}</h2>
           <p className="mb-4 text-gray-700">{quiz.description}</p>
+
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              setShowConfirm(true);
+              if (!submitted) {
+                setShowConfirm(true);
+              }
             }}
           >
             <div className="mb-6">
@@ -203,7 +301,10 @@ export default function QuizStart() {
               )}
               <div className="space-y-2">
                 {q.options.map((opt, i) => (
-                  <label key={i} className="flex items-center gap-2 cursor-pointer">
+                  <label
+                    key={i}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
                     <input
                       type="radio"
                       name={`question-${q._id}`}
@@ -232,6 +333,8 @@ export default function QuizStart() {
                   : "Mark for Review"}
               </button>
             </div>
+
+            {/* Navigation */}
             <div className="flex justify-between">
               <button
                 type="button"
@@ -245,9 +348,7 @@ export default function QuizStart() {
                 type="button"
                 className="px-4 py-2 bg-gray-200 rounded"
                 onClick={() =>
-                  setCurrentIdx((i) =>
-                    Math.min(shuffledQuestions.length - 1, i + 1)
-                  )
+                  setCurrentIdx((i) => Math.min(shuffledQuestions.length - 1, i + 1))
                 }
                 disabled={currentIdx === shuffledQuestions.length - 1 || submitted}
               >
@@ -263,8 +364,9 @@ export default function QuizStart() {
             </div>
           </form>
         </div>
-      </div>
+      </main>
+
+      {confirmModal}
     </div>
   );
 }
-// ...existing code...
