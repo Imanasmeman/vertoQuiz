@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import axios from "../api/api";
 import { BookOpen } from "lucide-react";
-
+//updated
 function shuffle(array) {
   return array
     .map((a) => [Math.random(), a])

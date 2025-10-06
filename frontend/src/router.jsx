@@ -3,7 +3,7 @@ import Login from "./pages/login";
 import Dashboard from "./pages/dashboard";
 import { useAuth } from "./context/AuthContext";
 import Register from "./pages/Register";
-import QuizStart from "./pages/QuizStart";
+import QuizStart from "./pages/quizstart";
 import QuizResult from "./pages/Result";
 import QuizAttemptsList from "./pages/attemtsquizz";
 import AttemptDetails from "./pages/attemtsDetails";
