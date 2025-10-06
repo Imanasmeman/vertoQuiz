@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import axios from "axios";
 import OrgHeader from "./OrgHeader";
+import API from "../../api/api";
 
 export default function UploadQuestions() {
   const { accessToken } = useAuth();
@@ -41,8 +42,7 @@ export default function UploadQuestions() {
     setMsg("");
     
     try {
-      const res = await axios.post(
-        "http://localhost:5000/org/bulk-add-que",
+      const res = await API.post("/org/bulk-add-que",
         { questions },
         {
           headers: {

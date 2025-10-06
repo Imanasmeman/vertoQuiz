@@ -12,7 +12,13 @@ export default function QuizAttempts() {
   useEffect(() => {
     const fetchAttempts = async () => {
       try {
-        const res = await API.get(`/org/orgquiz-attempts/${quizId}`);
+        const res = await API.get('/org/questions', {
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${accessToken}`,
+  }
+});
+
         setAttempts(res.data); // ✅ data is an array of attempts
         console.log("Fetched Attempts:", res.data);
       } catch (err) {
