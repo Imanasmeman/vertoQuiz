@@ -61,10 +61,9 @@ userRouter.post("/login", async (req, res) => {
   
     // send refresh token in HttpOnly cookie (safer than localStorage)
    res.cookie("refreshToken", refreshToken, {
-  httpOnly: true,
-  secure:false   ,  //process.env.NODE_ENV === "production", // false for localhost
-  sameSite: "strict",
-  //path: "/",   // 👈 MUST also add this
+  httpOnly: true, 
+   secure: true, 
+  sameSite: "none",  
   maxAge: 7 * 24 * 60 * 60 * 1000
 });
     res.json({

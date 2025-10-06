@@ -14,7 +14,7 @@ export default function QuizAttempts() {
   useEffect(() => {
     const fetchAttempts = async () => {
       try {
-        const res = await API.get(`/orgquiz-attempts/${quizId}`, {
+        const res = await API.get(`org/orgquiz-attempts/${quizId}`, {
   headers: {
     "Content-Type": "application/json",
     Authorization: `Bearer ${accessToken}`,
