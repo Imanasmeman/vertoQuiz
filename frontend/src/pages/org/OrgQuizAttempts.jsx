@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Loader2, UserCircle2, Trophy } from "lucide-react";
 import API from "../../api/api";
+import { useAuth } from "../../context/AuthContext";
 
 export default function QuizAttempts() {
   const { quizId } = useParams();
