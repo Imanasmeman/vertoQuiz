@@ -3,8 +3,9 @@ const dotenv = require("dotenv");
 const authMiddleware = require("../middlewares/authMiddleware");
 const questionModel = require("../models/questionModel");
 const quizModel = require("../models/quizModel");
-const quizAttemptModel = require("../models/QuizAttemptModel");
+const quizAttemptModel = require("../models/quizAttemptModel");
 
+//fixx
 dotenv.config();
 
 const orgRouter = express.Router();

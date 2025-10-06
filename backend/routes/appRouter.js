@@ -2,8 +2,11 @@ const express = require("express");
 const authMiddleware = require("../middlewares/authMiddleware");
 const quizModel = require("../models/quizModel");
 const userModel = require("../models/userModel");
-const quizAttemptModel = require("../models/QuizAttemptModel");
+const quizAttemptModel = require("../models/quizAttemptModel");
+
 const appRouter = express.Router();
+
+//fixes
 
 
 
