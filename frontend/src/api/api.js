@@ -2,7 +2,7 @@ import axios from "axios";
 import { LogOut } from "lucide-react";
 
 const API = axios.create({
-  baseURL: "http://localhost:5000", 
+  baseURL: "https://vertoquizz-0uu1.onrender.com", 
   withCredentials: true // important to send cookies
 });
 
