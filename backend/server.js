@@ -6,7 +6,6 @@ const userRouter = require("./routes/userRouter");
 const orgRouter = require("./routes/orgRouter");
 const appRouter = require("./routes/appRouter");
 const cookieParser = require("cookie-parser");
-const path = require("path");
 
 // Load environment variables
 dotenv.config();
