@@ -9,11 +9,43 @@ dotenv.config();
 
 const orgRouter = express.Router();
 
+
+orgRouter.get("/quizzes", authMiddleware(["organization"]), async (req, res) => {
+  try {
+    const organizationId = req.user.id;
+    const quizzes = await quizModel
+      .find({ organizationId });
+    res.status(200).json(quizzes);
+  }
+  catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Server error", error: err.message });
+  }
+});
+
+
+orgRouter.get("/orgquiz-attempts/:quizId", authMiddleware(["organization"]), async (req, res) => {
+  try {
+    const { quizId } = req.params;
+    console.log(quizId);
+    const organizationId = req.user.id;
+    const attempts = await quizAttemptModel
+      .find({ quizId })
+      .populate({ path: 'userId', select: 'name email' })
+      .populate({ path: 'quizId', select: 'title' });
+      console.log(attempts);
+    res.status(200).json(attempts);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Server error", error: err.message });
+  }
+});
+
 /* ===============================
    📦 Bulk Add Questions
 ================================= */
 orgRouter.post(
-  "/bulk-add-que",
+  "/add-questions",
   authMiddleware(["organization"]),
   async (req, res) => {
     try {
@@ -44,6 +76,17 @@ orgRouter.post(
     }
   }
 );
+orgRouter.get("/questions", authMiddleware(["organization"]), async (req, res) => {
+  try {
+    const organizationId = req.user.id;
+    const questions = await questionModel.find({ organizationId });
+    res.status(200).json(questions);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Server error", error: err.message });
+  }
+});
+
 
 /* ===============================
    🧠 Create Quiz

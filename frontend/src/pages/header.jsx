@@ -26,7 +26,7 @@ const Header = () => {
           {/* Logo / Title */}
           <div className="flex items-center gap-2">
             <BookOpen className="w-6 h-6 text-blue-600" />
-            <h1 className="text-xl font-bold text-gray-800">Quiz Platform</h1>
+            <h1 className="text-xl font-bold text-gray-800">VertoQuiz</h1>
           </div>
 
           {/* Links */}

@@ -7,7 +7,7 @@ export default function Footer() {
         {/* Branding */}
         <div className="text-center md:text-left">
           <h2 className="text-3xl font-extrabold tracking-tight">
-            Quiz Platform
+            VertoQuiz
           </h2>
           <p className="mt-1 text-gray-300 max-w-sm">
             Engage, Learn, & Challenge yourself with our dynamic quizzes.

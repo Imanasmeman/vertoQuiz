@@ -99,8 +99,9 @@ userRouter.post("/refresh", (req, res) => {
   );
 
   const user = await userModel.findById(decoded.id).select("name email role");
-
+  console.log("refreshed",user ,accessToken)
   res.json({ accessToken, user });
+
 });
 
   } catch (err) {

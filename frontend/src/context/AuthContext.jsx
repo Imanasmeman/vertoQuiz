@@ -1,81 +1,114 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import axios from "axios";
+import API from "../api/api";
+import { LogOut } from "lucide-react";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(null); // { id, email, role, name }
   const [accessToken, setAccessToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // axios instance
-  const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/",
-    withCredentials: true,
-  });
-
-  // Try to refresh session only once on mount
+  // On mount: load token from localStorage or try refresh
   useEffect(() => {
-    let didTry = false;
-    const checkSession = async () => {
-      if (didTry) return;
-      didTry = true;
-      try {
-        const res = await api.post("/auth/refresh");
-        setAccessToken(res.data.accessToken);
-      } catch {
-        setUser(null);
-        setAccessToken(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    checkSession();
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      setAccessToken(token);
+      // Note: optionally fetch user here if needed
+      setLoading(false);
+    } else {
+      const checkSession = async () => {
+        try {
+          const res = await API.post("/auth/refresh");
+          const { accessToken: newAccessToken, user: refreshedUser } = res.data;
+          if (newAccessToken && refreshedUser) {
+            setAccessToken(newAccessToken);
+            localStorage.setItem("accessToken", newAccessToken);
+            setUser(refreshedUser);
+          } else {
+            setUser(null);
+            localStorage.removeItem("accessToken");
+            setAccessToken(null);
+          }
+        } catch {
+          setUser(null);
+          localStorage.removeItem("accessToken");
+        } finally {
+          setLoading(false);
+        }
+      };
+      checkSession();
+    }
   }, []);
 
-  // Login
+  // Login function
   const login = async (email, password) => {
-    const res = await api.post("/auth/login", { email, password });
-    setAccessToken(res.data.accessToken);
+    const res = await API.post("/auth/login", { email, password });
+    const token = res.data.accessToken;
+    const loggedInUser = res.data.user; // Please ensure your login API returns user object as well
+    setAccessToken(token);
+    setUser(loggedInUser);
+    localStorage.setItem("accessToken", token);
     return res.data;
   };
 
-  // Logout
+  // Logout function
   const logout = async () => {
-    await api.post("/auth/logout");
+    await API.post("/auth/logout");
     setAccessToken(null);
     setUser(null);
     localStorage.removeItem("accessToken");
   };
 
-  // Axios interceptor → auto refresh access token only if accessToken exists
-  api.interceptors.response.use(
-    (res) => res,
-    async (err) => {
-      if (
-        err.response?.status === 401 &&
-        !err.config._retry &&
-        accessToken // Only try if we have an accessToken
-      ) {
-        err.config._retry = true;
-        try {
-          const refreshRes = await api.post("/auth/refresh");
-          setAccessToken(refreshRes.data.accessToken);
-          err.config.headers[
-            "Authorization"
-          ] = `Bearer ${refreshRes.data.accessToken}`;
-          return api(err.config);
-        } catch {
-          setUser(null);
-          setAccessToken(null);
+  // Axios interceptor for token refresh
+  useEffect(() => {
+    const interceptor = API.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        const originalRequest = error.config;
+
+        if (
+          error.response?.status === 401 &&
+          !originalRequest._retry &&
+          accessToken
+        ) {
+          originalRequest._retry = true;
+          try {
+            const refreshRes = await API.post("/auth/refresh");
+            const { accessToken: newAccessToken, user: refreshedUser } = refreshRes.data;
+            setAccessToken(newAccessToken);
+            setUser(refreshedUser);
+            localStorage.setItem("accessToken", newAccessToken);
+            originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
+            return API(originalRequest);
+          } catch (err) {
+            setUser(null);
+            setAccessToken(null);
+            localStorage.removeItem("accessToken");
+            return Promise.reject(err);
+          }
         }
+
+        return Promise.reject(error);
       }
-      return Promise.reject(err);
-    }
-  );
+    );
+
+    // Cleanup interceptor on unmount
+    return () => {
+      API.interceptors.response.eject(interceptor);
+    };
+  }, [accessToken]);
 
   return (
-    <AuthContext.Provider value={{ accessToken, login, logout, loading }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        accessToken,
+        login,
+        logout,
+        loading,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

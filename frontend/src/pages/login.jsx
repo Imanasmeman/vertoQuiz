@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router";
-
+import {jwtDecode} from "jwt-decode"; 
 export default function Login() {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
@@ -9,18 +9,26 @@ export default function Login() {
   const navigate = useNavigate();
 
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    try {
-      
-      await login(email, password);
+
+const handleLogin = async (e) => {
+  e.preventDefault();
+  try {
+    const res = await login(email, password); // login returns accessToken
+    const token = res.accessToken;
+
+    // Decode token to get role
+    const decoded = jwtDecode(token);
+
+    // Redirect based on role
+    if (decoded.role === "organization") {
+      navigate("/org-dashboard");
+    } else {
       navigate("/dashboard");
-     
-    } catch (err) {
-      alert(err.response?.data?.msg || "Login failed");
     }
-  };
- 
+  } catch (err) {
+    alert(err.response?.data?.msg || "Login failed");
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-slate-200">

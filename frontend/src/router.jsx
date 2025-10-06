@@ -10,55 +10,92 @@ import AttemptDetails from "./pages/AttemtsDetails";
 import Profile from "./pages/Profile";
 import About from "./pages/about";
 import Contact from "./pages/contact";
+import OrgDashboard from "./pages/org/OrgDashboard";
+import AddQuestions from "./pages/org/AddQuestions";
+import LaunchQuiz from "./pages/org/orgLaunchQuizz";
+import ProtectedRoute from "./ProtectedRoute";
+import QuizAttempts from "./pages/org/OrgQuizAttempts";
 
-function ProtectedRoute({ children }) {
-  const { accessToken, loading } = useAuth();
- if (loading) {
-    return (
-      <>
-        
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
-        </div>
-      </>
-    );
-  }
-  return accessToken ? children : <Navigate to="/login" replace />;
-}
+//import OrgDashboard from "./pages/OrgDashboard"; // 👈 your organization page
 
 export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register/>}/>
-      <Route
+        <Route path="/register" element={<Register />} />
+
+        {/* 👇 Student/User routes */}
+   < Route    
+  path="/dashboard"
+  element={
+    
+      <Dashboard />
+    
+  }
+/>
+          
+
+        <Route
           path="/quiz/:id/start"
           element={
-            <ProtectedRoute>
-              <QuizStart/>
-            </ProtectedRoute>
+          
+              <QuizStart />
+           
           }
         />
-        <Route path="/about-user" element={<Profile/>}/>
+
         <Route
-          path="/dashboard"
+          path="/quiz-attempts"
           element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
+           
+              <QuizAttemptsList />
+     
           }
         />
-        <Route path="/quiz-attempts" element={
-      <ProtectedRoute>
-        <QuizAttemptsList/>
-      </ProtectedRoute>}
-       />
-         <Route path="/quiz-result" element={<QuizResult />} />
-         <Route path="/attempt-details/:id"  element={<AttemptDetails/>}/> 
-         <Route path="/about"  element={<About/>}/>
-         <Route path="/contact"  element={<Contact/>}/>
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+
+        {/* 👇 Organization routes */}
+        <Route
+          path="/org-dashboard"
+          element={
+          
+              <OrgDashboard/>
+            
+          }
+        />
+
+  <Route
+          path="/org/add-que"
+          element={
+         
+             <AddQuestions/>
+          
+          }
+        />
+        <Route
+          path="/org/launch-quiz"
+          element={
+            
+             <LaunchQuiz/>
+            
+          }
+        />
+        <Route
+          path="/quiz-attempts/:quizId"
+          element={ 
+            <QuizAttempts/>
+          }
+        />
+        {/* Public routes */}
+        <Route path="/quiz-result" element={<QuizResult />} />
+        <Route path="/attempt-details/:id" element={<AttemptDetails />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/about-user" element={<Profile />} />
+        
+
+        {/* Catch all */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
   );

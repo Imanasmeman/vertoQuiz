@@ -1,4 +1,5 @@
 import axios from "axios";
+import { LogOut } from "lucide-react";
 
 const API = axios.create({
   baseURL: "http://localhost:5000", 
@@ -43,7 +44,7 @@ API.interceptors.response.use(
       } catch (refreshError) {
         console.log("Refresh failed, logging out...");
         localStorage.removeItem("accessToken");
-        window.location.href = "/login";
+        
       }
     }
     return Promise.reject(error);

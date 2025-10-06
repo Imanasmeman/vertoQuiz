@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import axios from "axios";
+import OrgHeader from "./OrgHeader";
 
 export default function UploadQuestions() {
   const { accessToken } = useAuth();
@@ -62,6 +63,7 @@ export default function UploadQuestions() {
   };
 
   return (
+    <>
     <div className="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-2xl mt-8">
       <h2 className="text-2xl font-semibold mb-6 text-center">Upload Quiz Questions</h2>
 
@@ -147,5 +149,6 @@ export default function UploadQuestions() {
 
       {msg && <p className="text-center mt-4 text-green-600 font-medium">{msg}</p>}
     </div>
+    </>
   );
 }
