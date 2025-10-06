@@ -1,212 +1,232 @@
-Here is your backend documentation written in a single **Markdown-formatted (`.md`) text file**:  
+
+# VertoQuiz Platform Documentation
+
+VertoQuiz is a full-stack quiz management and participation platform for organizations and students. It features secure authentication, a dynamic quiz system, bulk question uploads, and detailed quiz attempt tracking, with clean, modern frontend interfaces.
 
 ***
 
-# VertoQuiz Backend Documentation
+## Table of Contents
 
-## Overview
-The backend is built with **Node.js** and **Express**. It provides RESTful APIs for user registration, authentication, quiz management, and quiz attempts. **MongoDB** is used for data storage via Mongoose models.
-
-***
-
-## Project Structure
-```
-backend/
-│
-├── .env                   # Environment variables
-├── package.json           # Dependencies and scripts
-├── server.js              # Entry point
-│
-├── config/
-│   └── db.js              # MongoDB connection
-│
-├── middlewares/
-│   └── authMiddleware.js  # JWT authentication & role-based access
-│
-├── models/
-│   ├── questionModel.js       # Question schema
-│   ├── quizAttemptModel.js    # Quiz attempt schema
-│   ├── quizModel.js           # Quiz schema
-│   └── userModel.js           # User schema
-│
-├── routes/
-│   ├── appRouter.js       # Main router (can combine all routes)
-│   ├── orgRouter.js       # Organization routes (quiz creation, bulk add)
-│   └── userRouter.js      # User routes (register, login, refresh, quiz)
-```
+- Platform Overview
+- Backend Structure
+  - Models
+  - API Routes & Endpoints
+  - Auth Workflow
+- Frontend Structure
+  - Pages & UI Flow (with screenshots integration reference)
+  - Route Map
+  - State Management
+- User & Organization Features
+- API Examples
+- Development Tips & Extensions
 
 ***
 
-## Environment Variables (.env)
-```
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret
-JWT_REFRESH_SECRET=your_jwt_refresh_secret
-PORT=5000
-```
+## Platform Overview
+
+VertoQuiz supports:
+- Organizations uploading/bulk-adding questions, creating & launching quizzes, tracking results.
+- Students viewing assigned quizzes, attempting within deadlines, and reviewing results.
+- Modern, minimal UI for both roles.
 
 ***
 
-## Main Entry (server.js)
-- Loads environment variables  
-- Connects to MongoDB  
-- Sets up Express app and middleware (including cookie-parser)  
-- Mounts routers  
+## Backend Structure
+
+### Models
+
+- **User:** name, email, hashed password, role (`student` | `organization`).
+- **Question:** text, subject, options, correctAnswer, organizationId.
+- **Quiz:** title, description, questions (array), duration, deadline, allowedUsers (array of user emails), organizationId.
+- **QuizAttempt:** quizId, userId, answers [{questionId, selectedOption, isCorrect}], status (`started` | `completed` | `blocked`), score, startTime, endTime.
+
+### API Routes (Highlights)
+
+#### Auth & User
+
+| Endpoint                  | Method | Description                           | Auth Required |
+|:--------------------------|:-------|:--------------------------------------|:--------------|
+| /register                 | POST   | Register as `student` or `organization` | No            |
+| /login                    | POST   | Login, get tokens                     | No            |
+| /refresh                  | POST   | Get new access token                  | Cookie        |
+| /logout                   | POST   | Logout, clear refresh token           | Yes           |
+| /profile                  | GET    | User profile                          | Yes           |
+
+#### Student
+
+| Endpoint                    | Method | Description                                  |
+|:----------------------------|:-------|:---------------------------------------------|
+| /all-quiz                   | GET    | List all available quizzes for student       |
+| /quiz/:id/start             | GET    | Start or resume a quiz                       |
+| /quiz/:id/submit            | POST   | Submit quiz answers                          |
+| /quiz-attempts              | GET    | List past quiz attempts                      |
+| /:attemptId/quiz-attempt-detailed | GET | Detailed result for an attempt              |
+
+#### Organization
+
+| Endpoint           | Method | Description                                                                    |
+|:-------------------|:-------|:-------------------------------------------------------------------------------|
+| /quizzes           | GET    | List all quizzes created by org                                                |
+| /add-questions     | POST   | Bulk upload questions                                                          |
+| /questions         | GET    | View all created questions                                                     |
+| /create-quiz       | POST   | Create & launch a new quiz                                                     |
+| /orgquiz-attempts/:quizId | GET | See student attempts/results for a quiz                                  |
 
 ***
 
-## Middlewares
+### Auth Workflow
 
-**authMiddleware.js**
-- Verifies JWT access token  
-- Checks user role for protected routes  
-- Attaches user info to `req.user`  
-
-***
-
-## Models
-
-**userModel.js**
-- Fields: `name`, `email`, `password`, `role (student, organization)`  
-- Password is hashed before saving  
-
-**quizModel.js**
-- Fields: `title`, `description`, `duration`, `deadline`, `allowedUsers`, `questions`, `organizationId`  
-
-**questionModel.js**
-- Fields: `text`, `subject`, `options`, `correctAnswer`, `organizationId`  
-
-**quizAttemptModel.js**
-- Fields: `userId`, `quizId`, `answers`, `score`, `attemptedAt`  
+- JWT-based authentication. Access tokens (short-lived) and refresh tokens (in HttpOnly cookie).
+- Middleware checks token & role, attaches user info to requests.
+- Secure routes for both `student` and `organization` users.
 
 ***
 
-## Routes
+## Frontend Structure
 
-### 1. User Routes (`routes/userRouter.js`)
+### Core Folders
 
-**POST /register**  
-- Register a new user (student or organization)  
-- Request: `{ name, email, password, role }`  
-- Response: Success or error  
+| Folder           | Purpose                                                        |
+|:-----------------|:--------------------------------------------------------------|
+| api/             | All API services (`api.js`)                                   |
+| assets/          | App images, logos                                             |
+| context/         | Shared React context, e.g., `AuthContext.jsx` for auth state  |
+| pages/           | All main routes (“dashboard”, “quizstart”, etc.)              |
 
-**POST /login**  
-- Login user, returns access and refresh tokens  
-- Request: `{ email, password }`  
-- Response: `{ accessToken, user }` (refresh token in HttpOnly cookie)  
+### Page Components & UI Flow
 
-**POST /refresh**  
-- Refresh access token using refresh token (from cookie)  
-- Response: `{ accessToken }`  
+**[Student Side]**
 
-**POST /logout**  
-- Clears refresh token cookie  
+- Dashboard: Lists all new quizzes assigned. “No New Quizzes” if all are completed.  
+  ![Dashboard Screenshot][1]
+- Attempted: List of past quiz attempts with score, status, and a “View Details” button for each attempt.  
+  ![Attempts Screenshot][2]
+- Quiz Taking: Question navigation on the left, legend for statuses (answered, marked, unattempted), time left indicator, radio options, mark for review.  
+  ![Quiz Page Screenshot][3]
+- Result: (Not shown, but links directly from attempted)
 
-**GET /quiz**  
-- Get quizzes available for the logged-in student  
-- Protected: `authMiddleware(["student"])`  
-- Response: List of quizzes (if not already attempted)  
+**[Organization Side]**
 
-***
+- My Quizzes: Shows cards for each created quiz, number of questions, simple info.  
+  ![Org Dashboard Screenshot][4]
+- Add Questions: Opens bulk upload (from org top menu).
+- Launch Quiz: UI for quiz creation, selection of questions and allowed users.
+- Quiz Attempts: See all user attempts/results for each quiz.
 
-### 2. Organization Routes (`routes/orgRouter.js`)
+**[General]**
 
-**POST /bulk-add-que**  
-- Bulk add questions for organization  
-- Protected: `authMiddleware(["organization"])`  
-- Request: `{ questions: [...] }`  
-- Response: Success message and saved questions  
+- Navigation header with: Dashboard, Attempted, About User/Profile, Logout.
 
-**POST /create-quiz**  
-- Create a new quiz  
-- Protected: `authMiddleware(["organization"])`  
-- Request: `{ title, description, questions, duration, deadline, allowedUsers }`  
-- Response: Success message and quiz data  
+### Route Map
 
-***
+| Path             | Component           | Role           |
+|:-----------------|:--------------------|:---------------|
+| /                | Dashboard           | student        |
+| /attempted       | Attempts List       | student        |
+| /quizstart       | Quiz Attempt        | student        |
+| /aboutuser       | User Info           | both           |
+| /login           | Auth                | both           |
+| /register        | Auth                | both           |
+| /org             | Org Dashboard       | organization   |
+| /org/addq        | Add Questions       | organization   |
+| /org/launch      | Launch Quiz         | organization   |
 
-### 3. App Router (`routes/appRouter.js`)
-- Can be used to combine all routers and mount them in `server.js`  
+### State Management
 
-***
-
-## Authentication Flow
-1. **Register:** User registers with email, password, and role.  
-2. **Login:** User logs in, receives *access token (JWT)* and *refresh token (cookie)*.  
-3. **Protected Routes:** Access token required in Authorization header. Role-based access enforced by middleware.  
-4. **Refresh Token:** When access token expires, client calls `/refresh` to get new access token using refresh token cookie.  
-5. **Logout:** Clears refresh token cookie.  
-
-***
-
-## Error Handling
-- All routes return proper HTTP status codes and error messages.  
-- Common errors:
-  - Missing fields  
-  - Invalid credentials  
-  - Unauthorized access  
-  - Forbidden actions  
-  - Server errors  
+- Uses React Context (AuthContext) for authentication and user state.
+- API services use tokens from context/local storage/cookie as required.
+- Navigation adapts to role (`student`/`organization`) after login.
 
 ***
 
-## Example Usage
+## User & Organization Features
 
-**Register**
-```http
-POST /api/user/register
-Content-Type: application/json
+### Student Features
 
+- View assigned quizzes and available deadlines.
+- Take assigned quizzes with timer and question navigation.
+- Mark questions for review.
+- Submit quizzes; see scores immediately after submit.
+- Review history and see previous attempt details.
+
+### Organization Features
+
+- Register/login as an org user.
+- Bulk or single question upload.
+- Create quizzes from question bank, set deadlines, assign to users.
+- View all published quizzes in dashboard.
+- Track detailed quiz attempts and results.
+- Clean, quick switch between question upload and quiz launch from header.
+
+***
+
+## API Request Examples
+
+**Student: Submit a quiz:**
+
+```json
+POST /quiz/<quizId>/submit
+Headers: { "Authorization": "Bearer <accessToken>" }
+Body:
 {
-  "name": "John",
-  "email": "john@example.com",
-  "password": "password123",
-  "role": "student"
+  "answers": [
+    { "questionId": "...", "selectedOption": "..." }
+  ]
 }
 ```
 
-**Login**
-```http
-POST /api/user/login
-Content-Type: application/json
+**Organization: Bulk Question Upload**
 
+```json
+POST /add-questions
+Headers: { "Authorization": "Bearer <accessToken>" }
+Body:
 {
-  "email": "john@example.com",
-  "password": "password123"
+  "questions": [
+    {
+      "text": "...",
+      "subject": "...",
+      "options": ["...", "..."],
+      "correctAnswer": "...",
+    }
+  ]
 }
 ```
 
-**Create Quiz (Organization)**
-```http
-POST /api/org/create-quiz
-Authorization: Bearer <accessToken>
-Content-Type: application/json
+**Organization: Create a Quiz**
 
+```json
+POST /create-quiz
+Headers: { "Authorization": "Bearer <accessToken>" }
+Body:
 {
-  "title": "Math Quiz",
-  "description": "Basic math quiz",
-  "questions": ["questionId1", "questionId2"],
+  "title": "...",
+  "description": "...",
+  "questions": ["<questionID1>", "<questionID2>"],
   "duration": 30,
-  "deadline": "2025-10-10T23:59:59Z",
-  "allowedUsers": ["student1@example.com"]
+  "deadline": "2025-12-31T23:59:00Z",
+  "allowedUsers": [
+    "student1@email.com",
+    "student2@email.com"
+  ]
 }
 ```
 
 ***
 
-## Notes
-- All passwords are hashed before saving.  
-- JWT secrets must be defined in `.env`.  
-- Use **cookie-parser** for refresh token functionality.  
-- MongoDB connection string must be valid.  
+## Development & Extension Tips
+
+- Add user notifications for quiz availability and result publication.
+- Integrate analytics for detailed performance.
+- Enhance question editing and randomization.
+- Extensive mobile responsiveness for all pages.
+- Add role-based dashboard widgets and filters.
+- Implement proctoring features or webcam monitoring if needed.
 
 ***
 
-## Extending
-- Add more user roles if needed.  
-- Add quiz attempt endpoints.  
-- Add admin routes for management.  
 
 ***
 
-Would you like me to also prepare a **README.md file structure** with installation and setup instructions so you can directly use it in your repository?
+This documentation covers VertoQuiz's data model, backend and frontend structure, and UI/UX workflows for maximum clarity and maintainability.[2][4][3][1]
+
