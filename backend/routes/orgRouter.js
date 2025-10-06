@@ -81,6 +81,7 @@ orgRouter.get("/questions", authMiddleware(["organization"]), async (req, res) =
   try {
     const organizationId = req.user.id;
     const questions = await questionModel.find({ organizationId });
+    console.log("que",questions);
     res.status(200).json(questions);
   } catch (err) {
     console.error(err);
