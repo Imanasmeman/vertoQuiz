@@ -30,7 +30,7 @@ API.interceptors.response.use(
       try {
         // call refresh endpoint
         const res = await axios.post(
-          "http://localhost:5000/auth/refresh",
+          "https://vertoquizz-0uu1.onrender.com/auth/refresh",
           {},
           { withCredentials: true }
         );
