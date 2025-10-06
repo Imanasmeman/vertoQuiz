@@ -3,7 +3,7 @@ import Login from "./pages/login";
 import Dashboard from "./pages/dashboard";
 import { useAuth } from "./context/AuthContext";
 import Register from "./pages/Register";
-import QuizStart from "./pages/quizstart";
+import QuizStart from "./pages/Quizstart";
 import QuizResult from "./pages/Result";
 import QuizAttemptsList from "./pages/attemtsquizz";
 import AttemptDetails from "./pages/attemtsDetails";
@@ -54,7 +54,7 @@ export default function AppRouter() {
           }
         />
 
-        {/* 👇 Organization routes */}
+
         <Route
           path="/org-dashboard"
           element={
@@ -86,7 +86,7 @@ export default function AppRouter() {
             <QuizAttempts/>
           }
         />
-        {/* Public routes */}
+        
         <Route path="/quiz-result" element={<QuizResult />} />
         <Route path="/attempt-details/:id" element={<AttemptDetails />} />
         <Route path="/about" element={<About />} />
