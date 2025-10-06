@@ -12,7 +12,7 @@ import About from "./pages/about";
 import Contact from "./pages/contact";
 import OrgDashboard from "./pages/org/OrgDashboard";
 import AddQuestions from "./pages/org/AddQuestions";
-import LaunchQuiz from "./pages/org/OrgLaunchQuizz";
+import LaunchQuiz from "./pages/org/orgLaunchQuizz";
 //import ProtectedRoute from "./ProtectedRoute";
 import QuizAttempts from "./pages/org/OrgQuizAttempts";
 import AttemptDetails from "./pages/AttemtsDetails";
