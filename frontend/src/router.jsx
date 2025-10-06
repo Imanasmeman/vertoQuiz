@@ -6,7 +6,7 @@ import Register from "./pages/Register";
 import QuizStart from "./pages/Quizstart";
 import QuizResult from "./pages/Result";
 import QuizAttemptsList from "./pages/attemtsquizz";
-import AttemptDetails from "./pages/attemtsDetails";
+
 import Profile from "./pages/Profile";
 import About from "./pages/about";
 import Contact from "./pages/contact";
@@ -15,6 +15,7 @@ import AddQuestions from "./pages/org/AddQuestions";
 import LaunchQuiz from "./pages/org/OrgLaunchQuizz";
 //import ProtectedRoute from "./ProtectedRoute";
 import QuizAttempts from "./pages/org/OrgQuizAttempts";
+import AttemptDetails from "./pages/AttemtsDetails";
 
 //import OrgDashboard from "./pages/OrgDashboard"; // 👈 your organization page
 
