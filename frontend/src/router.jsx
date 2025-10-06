@@ -16,6 +16,7 @@ import LaunchQuiz from "./pages/org/orgLaunchQuizz";
 //import ProtectedRoute from "./ProtectedRoute";
 import QuizAttempts from "./pages/org/OrgQuizAttempts";
 import AttemptDetails from "./pages/AttemtsDetails";
+import UploadQuestions from "./pages/org/UploadQuestions";
 
 //import OrgDashboard from "./pages/OrgDashboard"; // 👈 your organization page
 
@@ -69,7 +70,7 @@ export default function AppRouter() {
           path="/org/add-que"
           element={
          
-             <AddQuestions/>
+             <UploadQuestions/>
           
           }
         />
