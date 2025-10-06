@@ -70,7 +70,7 @@ export default function AppRouter() {
           path="/org/add-que"
           element={
          
-             <UploadQuestions/>
+             <AddQuestions/>
           
           }
         />

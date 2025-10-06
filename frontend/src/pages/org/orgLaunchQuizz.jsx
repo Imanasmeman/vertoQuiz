@@ -151,13 +151,14 @@ export default function LaunchQuiz() {
         description,
         questions: selectedQuestions,
         duration: parseInt(duration),
-        deadline,
+        deadline : new Date(deadline),
         allowedUsers
       }, {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+          'Authorization': `Bearer ${accessToken}`
+        },
+        withCredentials: true
       });
 
       alert("Quiz launched successfully!");

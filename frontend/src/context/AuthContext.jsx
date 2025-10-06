@@ -19,7 +19,8 @@ export const AuthProvider = ({ children }) => {
     } else {
       const checkSession = async () => {
         try {
-          const res = await API.post("/auth/refresh");
+    const res = await API.post("/auth/refresh", {}, { withCredentials: true });
+
           const { accessToken: newAccessToken, user: refreshedUser } = res.data;
           if (newAccessToken && refreshedUser) {
             setAccessToken(newAccessToken);
@@ -74,7 +75,7 @@ export const AuthProvider = ({ children }) => {
         ) {
           originalRequest._retry = true;
           try {
-            const refreshRes = await API.post("/auth/refresh");
+             const refreshRes = await API.post("/auth/refresh", {}, { withCredentials: true });
             const { accessToken: newAccessToken, user: refreshedUser } = refreshRes.data;
             setAccessToken(newAccessToken);
             setUser(refreshedUser);

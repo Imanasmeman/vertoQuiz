@@ -3,16 +3,24 @@ import { useNavigate } from "react-router-dom";
 import { FileQuestion, Loader2, ClipboardList } from "lucide-react";
 import OrgHeader from "./OrgHeader";
 import API from "../../api/api";
+import { useAuth } from "../../context/AuthContext";
 
 export default function OrgDashboard() {
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { accessToken } = useAuth();
 
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
-        const res = await API.get("/org/quizzes");
+        const res = await API.get("/org/quizzes", {
+         headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          withCredentials: true,
+        });
         setQuizzes(res.data);
       } catch (err) {
         console.error(err);
