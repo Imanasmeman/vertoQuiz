@@ -2,18 +2,18 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/login";
 import Dashboard from "./pages/dashboard";
 import { useAuth } from "./context/AuthContext";
-import Register from "./pages/register";
+import Register from "./pages/Register";
 import QuizStart from "./pages/QuizStart";
 import QuizResult from "./pages/Result";
 import QuizAttemptsList from "./pages/attemtsquizz";
-import AttemptDetails from "./pages/AttemtsDetails";
+import AttemptDetails from "./pages/attemtsDetails";
 import Profile from "./pages/Profile";
 import About from "./pages/about";
 import Contact from "./pages/contact";
 import OrgDashboard from "./pages/org/OrgDashboard";
 import AddQuestions from "./pages/org/AddQuestions";
-import LaunchQuiz from "./pages/org/orgLaunchQuizz";
-import ProtectedRoute from "./ProtectedRoute";
+import LaunchQuiz from "./pages/org/OrgLaunchQuizz";
+//import ProtectedRoute from "./ProtectedRoute";
 import QuizAttempts from "./pages/org/OrgQuizAttempts";
 
 //import OrgDashboard from "./pages/OrgDashboard"; // 👈 your organization page
