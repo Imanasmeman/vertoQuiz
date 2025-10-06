@@ -6,11 +6,23 @@ const userRouter = require("./routes/userRouter");
 const orgRouter = require("./routes/orgRouter");
 const cookieParser = require("cookie-parser");
 const appRouter = require("./routes/appRouter");
+const path = require("path");
+
+
 
 dotenv.config();
 connectDB();
 
 const app = express();
+const __dirname = path.resolve();
+
+// serve the frontend build
+app.use(express.static(path.join(__dirname, "client", "build")));
+
+// all unknown routes -> send index.html
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "client", "build", "index.html"));
+});
 app.use(cors({
   origin: [
   'http://localhost:5173',
