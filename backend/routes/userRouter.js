@@ -4,8 +4,7 @@ const jwt = require("jsonwebtoken");
 const userModel = require("../models/userModel");
 const dotenv = require("dotenv");
 const authMiddleware = require("../middlewares/authMiddleware");
-const quizModel = require("../models/quizModel");
-const quizAttemptModel = require("../models/QuizAttemptModel");
+const quizModel = require("../models/quizModel")
 dotenv.config();
 
 
