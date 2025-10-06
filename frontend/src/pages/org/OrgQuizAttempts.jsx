@@ -8,6 +8,7 @@ export default function QuizAttempts() {
   const navigate = useNavigate();
   const [attempts, setAttempts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { accessToken } = useAuth();
 
   useEffect(() => {
     const fetchAttempts = async () => {
