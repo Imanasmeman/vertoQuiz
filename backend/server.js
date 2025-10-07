@@ -39,12 +39,7 @@ app.use("/org", orgRouter);
 app.use("/app", appRouter);
 
 // ✅ Serve frontend (important for Render refresh issue)
-const __dirname = path.resolve();
-app.use(express.static(path.join(__dirname, "frontend/dist"))); // adjust if your build folder is different
 
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "frontend/dist", "index.html"));
-});
 
 // Start server
 const PORT = process.env.PORT || 5000;

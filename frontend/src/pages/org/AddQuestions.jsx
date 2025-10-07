@@ -1,5 +1,14 @@
-import { useState, useEffect } from "react";
-import { Plus, Upload, Trash2, Send, FileJson, CreditCard as Edit3, BookOpen, CheckCircle2, X } from "lucide-react";
+import { useState } from "react";
+import {
+  Plus,
+  Upload,
+  Send,
+  FileJson,
+  CreditCard as Edit3,
+  BookOpen,
+  CheckCircle2,
+  X,
+} from "lucide-react";
 import OrgHeader from "./OrgHeader";
 import API from "../../api/api";
 import { useAuth } from "../../context/AuthContext";
@@ -8,41 +17,8 @@ export default function AddQuestions() {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState("manual"); // 'manual' or 'bulk'
-  const [subjects, setSubjects] = useState([]);
   const optionLabels = ["A", "B", "C", "D"];
   const { accessToken } = useAuth();
-
-  // Get token from localStorage (adjust if using context)
-//  const accessToken = localStorage.getItem("accessToken");
-
-  // Fetch existing questions from backend
-  const fetchQuestions = async () => {
-    setLoading(true);
-   
-try {
-      const response = await API.get("/org/questions", {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      const data = response.data || [];
-      setQuestions(data);
-      const uniqueSubjects = [...new Set(data.map((q) => q.subject))];
-      setSubjects(uniqueSubjects);
-    }
-    catch (err) {
-      console.error("Failed to fetch questions:", err.response || err);
-      alert("Failed to fetch questions");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchQuestions();
-  }, []);
 
   // Handle JSON bulk upload
   const handleFileUpload = (e) => {
@@ -84,7 +60,7 @@ try {
     setQuestions(questions.filter((_, i) => i !== index));
   };
 
-  // Edit question
+  // Edit question fields
   const handleQuestionChange = (index, field, value) => {
     const newQuestions = [...questions];
     if (field.startsWith("option")) {
@@ -96,7 +72,7 @@ try {
     setQuestions(newQuestions);
   };
 
-  // Submit all questions
+  // Submit all questions (POST only)
   const handleSubmit = async () => {
     if (!questions.length) return;
     setLoading(true);
@@ -107,16 +83,19 @@ try {
         return;
       }
 
-      await API.post("/org/add-questions", { questions }, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      await API.post(
+        "/org/add-questions",
+        { questions },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
 
       alert("Questions added successfully!");
-      setQuestions([]);
-      fetchQuestions(); // Refresh list
+      setQuestions([]); // clear after upload
     } catch (err) {
       console.error("Failed to submit questions:", err.response || err);
       alert("Failed to add questions");
@@ -134,9 +113,13 @@ try {
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-3 mb-3">
               <BookOpen className="w-10 h-10 text-blue-600" />
-              <h1 className="text-4xl font-bold text-gray-800">Question Manager</h1>
+              <h1 className="text-4xl font-bold text-gray-800">
+                Question Manager
+              </h1>
             </div>
-            <p className="text-gray-600">Create and manage exam questions efficiently</p>
+            <p className="text-gray-600">
+              Create and manage exam questions efficiently
+            </p>
           </div>
 
           {/* Mode Toggle */}
@@ -170,9 +153,13 @@ try {
             <div className="mb-8 bg-white rounded-xl shadow-md p-8 border border-gray-100">
               <div className="flex flex-col items-center justify-center">
                 <Upload className="w-16 h-16 text-blue-500 mb-4" />
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">Upload JSON File</h3>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                  Upload JSON File
+                </h3>
                 <p className="text-gray-600 mb-6 text-center max-w-md">
-                  Select a JSON file containing your questions. The file should have a 'questions' array with text, subject, options, and correctAnswer fields.
+                  Select a JSON file containing your questions. The file should
+                  have a 'questions' array with text, subject, options, and
+                  correctAnswer fields.
                 </p>
                 <label className="cursor-pointer">
                   <input
@@ -208,7 +195,10 @@ try {
             <div className="space-y-6">
               <div className="flex items-center justify-between bg-white rounded-lg px-6 py-3 shadow-sm border border-gray-200">
                 <p className="text-gray-700 font-medium">
-                  Total Questions: <span className="text-blue-600 font-bold">{questions.length}</span>
+                  Total Questions:{" "}
+                  <span className="text-blue-600 font-bold">
+                    {questions.length}
+                  </span>
                 </p>
               </div>
 
@@ -227,7 +217,7 @@ try {
                     <X className="w-5 h-5 group-hover:scale-110 transition-transform" />
                   </button>
 
-                  {/* Question Number Badge */}
+                  {/* Question Badge */}
                   <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold mb-4">
                     <BookOpen className="w-4 h-4" />
                     Question {index + 1}
@@ -243,7 +233,9 @@ try {
                         type="text"
                         placeholder="Enter your question here..."
                         value={q.text}
-                        onChange={(e) => handleQuestionChange(index, "text", e.target.value)}
+                        onChange={(e) =>
+                          handleQuestionChange(index, "text", e.target.value)
+                        }
                         className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors outline-none"
                         required
                       />
@@ -258,7 +250,9 @@ try {
                         type="text"
                         placeholder="e.g., Mathematics, Science, History..."
                         value={q.subject}
-                        onChange={(e) => handleQuestionChange(index, "subject", e.target.value)}
+                        onChange={(e) =>
+                          handleQuestionChange(index, "subject", e.target.value)
+                        }
                         className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors outline-none"
                         required
                       />
@@ -280,7 +274,11 @@ try {
                               placeholder={`Option ${optionLabels[i]}`}
                               value={opt}
                               onChange={(e) =>
-                                handleQuestionChange(index, `option-${i}`, e.target.value)
+                                handleQuestionChange(
+                                  index,
+                                  `option-${i}`,
+                                  e.target.value
+                                )
                               }
                               className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors outline-none"
                               required
@@ -293,11 +291,17 @@ try {
                     {/* Correct Answer */}
                     <div className="flex items-center gap-4 bg-green-50 p-4 rounded-lg border border-green-200">
                       <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
-                      <label className="font-medium text-gray-700">Correct Answer:</label>
+                      <label className="font-medium text-gray-700">
+                        Correct Answer:
+                      </label>
                       <select
                         value={q.correctAnswer}
                         onChange={(e) =>
-                          handleQuestionChange(index, "correctAnswer", e.target.value)
+                          handleQuestionChange(
+                            index,
+                            "correctAnswer",
+                            e.target.value
+                          )
                         }
                         className="px-4 py-2 border-2 border-green-300 rounded-lg bg-white focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-colors outline-none font-medium text-green-700"
                       >
@@ -339,7 +343,9 @@ try {
           {questions.length === 0 && (
             <div className="text-center py-16 bg-white rounded-xl shadow-md border border-gray-100">
               <BookOpen className="w-20 h-20 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">No Questions Yet</h3>
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                No Questions Yet
+              </h3>
               <p className="text-gray-500">
                 {mode === "manual"
                   ? "Click 'Add New Question' to start creating questions manually"

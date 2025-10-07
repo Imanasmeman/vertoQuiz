@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
-import Header from "./header";
-import Footer from "./footer";
-import API from "../api/api";
 
-export default function Profile() {
+import OrgHeader from "./OrgHeader";
+import API from "../../api/api";
+import { useAuth } from "../../context/AuthContext";
+
+export default function OrgProfile() {
   const { accessToken } = useAuth();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -31,7 +31,7 @@ export default function Profile() {
   if (loading) {
     return (
       <>
-        <Header />
+     <OrgHeader/>
         <div className="min-h-screen flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
         </div>
@@ -42,7 +42,7 @@ export default function Profile() {
   if (error) {
     return (
       <>
-        <Header />
+         <OrgHeader/>
         <div className="min-h-screen flex items-center justify-center">
           <div className="bg-red-100 text-red-700 px-6 py-4 rounded-md shadow">
             {error}
@@ -54,7 +54,7 @@ export default function Profile() {
 
   return (
     <>
-      <Header />
+           <OrgHeader/>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 flex flex-col items-center justify-center px-6">
         <div className="max-w-2xl w-full text-center">
           {/* Avatar Circle */}
@@ -74,7 +74,7 @@ export default function Profile() {
           </span>
         </div>
       </div>
-      <Footer/>
+      
     </>
   );
 }

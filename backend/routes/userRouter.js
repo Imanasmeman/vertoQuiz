@@ -60,12 +60,14 @@ userRouter.post("/login", async (req, res) => {
     const { accessToken, refreshToken } = generateTokens(user);
   
     // send refresh token in HttpOnly cookie (safer than localStorage)
-   res.cookie("refreshToken", refreshToken, {
-  httpOnly: true, 
-   secure: true, 
-  sameSite: "none",  
+  res.cookie("refreshToken", refreshToken, {
+  httpOnly: true,
+  secure: true,           // true only in production (https)
+  sameSite: "none",       // needed for cross-site cookies
+  path: "/",              // make available globally
   maxAge: 7 * 24 * 60 * 60 * 1000
 });
+
     res.json({
       message: "Login successful",
       accessToken,
@@ -83,41 +85,55 @@ userRouter.post("/login", async (req, res) => {
 });
 
 // REFRESH TOKEN
-userRouter.post("/refresh", (req, res) => {
+userRouter.post("/refresh", async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
-    if (!refreshToken) return res.status(401).json({ error: "No refresh token" });
+    if (!refreshToken)
+      return res.status(401).json({ error: "No refresh token" });
 
-    jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, async (err, decoded) => {
-  if (err) return res.status(403).json({ error: "Invalid refresh token" });
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const user = await userModel.findById(decoded.id);
 
-  const accessToken = jwt.sign(
-    { id: decoded.id, email: decoded.email, role: decoded.role },
-    process.env.JWT_SECRET,
-    { expiresIn: "15m" }
-  );
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-  const user = await userModel.findById(decoded.id).select("name email role");
-  console.log("refreshed",user ,accessToken)
-  res.json({ accessToken, user });
+    const accessToken = jwt.sign(
+      { id: user._id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "15m" }
+    );
 
-});
+    console.log("✅ Refreshed access token for:", user.email);
 
+    return res.json({
+      accessToken,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
   } catch (err) {
-    res.status(500).json({ error: "Server error" });
+    console.error("Refresh error:", err.message);
+    return res.status(403).json({ error: "Invalid or expired refresh token" });
   }
 });
 
+
+
 userRouter.post("/logout", async(req, res) => {
- res.clearCookie("refreshToken", { httpOnly: true, secure: false, sameSite: "strict" });
-  console.log("User logged out, refresh token cookie cleared");
- // Should be undefined
-  res.json({ message: "Logged out successfully" });
+ res.clearCookie("refreshToken", {
+  httpOnly: true,
+  secure: true,
+  sameSite: "none",
+  path: "/",
+});
+return res.json({ message: "Logged out successfully" });
 });
 
 
 // Get user profile
-userRouter.get("/profile", authMiddleware(["student"]), async (req, res) => {
+userRouter.get("/profile", authMiddleware(["student","organization"]), async (req, res) => {
   try {
     const userId = req.user.id; // set by middleware
     const user = await userModel.findById(userId).select("-password");

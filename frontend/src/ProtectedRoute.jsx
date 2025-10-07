@@ -1,29 +1,32 @@
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 
 export default function ProtectedRoute({ children, allowedRoles }) {
   const { user, loading } = useAuth();
-  const location = useLocation();
+    console.log("Auth Loading:", user);
 
+     // 🕐 While checking authentication
   if (loading) {
-    // Show some loading indicator while auth is being checked
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+      <div className="flex justify-center items-center h-screen text-lg font-semibold">
+        Checking session...
       </div>
     );
   }
 
-  // If no user, redirect to login
-  if (!user && !loading) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
-  }
-
-  // If user role is not allowed, redirect to login or unauthorized page
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+  // 🚫 If not logged in
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  // Authorized - render the protected component
+  console.log("User Role:", user.role);
+  // 🔒 If role not allowed
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    const redirectPath =
+      user.role === "organization" ? "/org-dashboard" : "/dashboard";
+    return <Navigate to={redirectPath} replace />;
+  }
+
+  // ✅ Allowed access
   return children;
 }

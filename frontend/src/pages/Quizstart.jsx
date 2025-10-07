@@ -3,7 +3,8 @@ import { useParams, useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import axios from "../api/api";
 import { BookOpen } from "lucide-react";
-//updated
+
+// Shuffle function
 function shuffle(array) {
   return array
     .map((a) => [Math.random(), a])
@@ -12,26 +13,10 @@ function shuffle(array) {
 }
 
 const LEGEND = [
-  {
-    label: "Answered",
-    color: "bg-green-300",
-    shape: "rounded-full", // circle
-  },
-  {
-    label: "Marked for Review & Answered",
-    color: "bg-orange-300",
-    shape: "rounded-full", // circle
-  },
-  {
-    label: "Marked for Review (No Answer)",
-    color: "bg-yellow-300",
-    shape: "rounded-full", // circle
-  },
-  {
-    label: "Unanswered",
-    color: "bg-gray-200",
-    shape: "rounded", // square
-  },
+  { label: "Answered", color: "bg-green-300", shape: "rounded-full" },
+  { label: "Marked for Review & Answered", color: "bg-orange-300", shape: "rounded-full" },
+  { label: "Marked for Review (No Answer)", color: "bg-yellow-300", shape: "rounded-full" },
+  { label: "Unanswered", color: "bg-gray-200", shape: "rounded" },
 ];
 
 export default function QuizStart() {
@@ -41,13 +26,8 @@ export default function QuizStart() {
 
   const [quiz, setQuiz] = useState(null);
   const [shuffledQuestions, setShuffledQuestions] = useState([]);
-  const [answers, setAnswers] = useState(
-    () => JSON.parse(localStorage.getItem(`quiz-${id}-answers`) || "{}")
-  );
-  const [reviewLater, setReviewLater] = useState(
-    () => JSON.parse(localStorage.getItem(`quiz-${id}-reviewLater`) || "[]")
-  );
-
+  const [answers, setAnswers] = useState(() => JSON.parse(localStorage.getItem(`quiz-${id}-answers`) || "{}"));
+  const [reviewLater, setReviewLater] = useState(() => JSON.parse(localStorage.getItem(`quiz-${id}-reviewLater`) || "[]"));
   const [error, setError] = useState("");
   const [timeLeft, setTimeLeft] = useState(0);
   const [submitted, setSubmitted] = useState(false);
@@ -55,7 +35,6 @@ export default function QuizStart() {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // Fetch quiz
   useEffect(() => {
     const fetchQuiz = async () => {
       try {
@@ -63,8 +42,6 @@ export default function QuizStart() {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         setQuiz(res.data);
-
-        // Keep shuffled order consistent
         const stored = JSON.parse(localStorage.getItem(`quiz-${id}-questions`));
         if (stored) {
           setShuffledQuestions(stored);
@@ -73,7 +50,6 @@ export default function QuizStart() {
           setShuffledQuestions(shuffled);
           localStorage.setItem(`quiz-${id}-questions`, JSON.stringify(shuffled));
         }
-
         setEndTime(new Date(res.data.endTime));
       } catch (err) {
         setError(err.response?.data?.error || "Failed to load quiz");
@@ -82,24 +58,19 @@ export default function QuizStart() {
     fetchQuiz();
   }, [id, accessToken]);
 
-  // Timer - submit only if time runs out and quiz not submitted yet
   useEffect(() => {
     if (!endTime || submitted) return;
     const updateTimeLeft = () => {
       const now = new Date();
       const left = Math.max(0, Math.floor((endTime - now) / 1000));
       setTimeLeft(left);
-      if (left <= 0 && !submitted) {
-        // Only auto submit on timeout
-        handleSubmit();
-      }
+      if (left <= 0 && !submitted) handleSubmit();
     };
     updateTimeLeft();
     const timer = setInterval(updateTimeLeft, 1000);
     return () => clearInterval(timer);
   }, [endTime, submitted]);
 
-  // Warn user before unload (back/navigation/close) if quiz incomplete
   useEffect(() => {
     const beforeUnloadHandler = (e) => {
       if (!submitted && timeLeft > 0) {
@@ -152,12 +123,9 @@ export default function QuizStart() {
         },
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
-
-      // Clear storage after submission
       localStorage.removeItem(`quiz-${id}-answers`);
       localStorage.removeItem(`quiz-${id}-questions`);
       localStorage.removeItem(`quiz-${id}-reviewLater`);
-
       navigate("/quiz-result", {
         state: {
           score: res.data.score,
@@ -167,7 +135,7 @@ export default function QuizStart() {
       });
     } catch (err) {
       setError(err.response?.data?.error || "Failed to submit quiz");
-      setSubmitted(false); // Allow retry on error
+      setSubmitted(false);
     }
   };
 
@@ -183,54 +151,49 @@ export default function QuizStart() {
 
   const confirmModal =
     showConfirm && (
-      <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-        <div className="bg-white p-6 rounded shadow text-center">
+      <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4">
+        <div className="bg-white p-6 rounded shadow text-center w-full max-w-sm">
           <h2 className="text-xl font-bold mb-4">Submit Quiz?</h2>
           <p className="mb-4">Are you sure you want to submit your quiz?</p>
-          <button
-            className="bg-blue-600 text-white px-4 py-2 rounded mr-2"
-            onClick={handleSubmit}
-          >
-            Yes, Submit
-          </button>
-          <button
-            className="bg-gray-300 px-4 py-2 rounded"
-            onClick={() => setShowConfirm(false)}
-          >
-            Cancel
-          </button>
+          <div className="flex justify-center gap-3 flex-wrap">
+            <button className="bg-blue-600 text-white px-4 py-2 rounded" onClick={handleSubmit}>
+              Yes, Submit
+            </button>
+            <button className="bg-gray-300 px-4 py-2 rounded" onClick={() => setShowConfirm(false)}>
+              Cancel
+            </button>
+          </div>
         </div>
       </div>
     );
 
   const getBtnStyle = (idx, qid) => {
-    if (currentIdx === idx) return "bg-blue-600 text-white rounded-full"; // current
-    if (reviewLater.includes(qid) && answers[qid])
-      return "bg-orange-300 text-black rounded-full"; // review + answered
-    if (reviewLater.includes(qid)) return "bg-yellow-300 text-black rounded-full"; // only review
-    if (answers[qid]) return "bg-green-300 text-black rounded-full"; // answered
-    return "bg-gray-200 text-black rounded"; // untouched
+    if (currentIdx === idx) return "bg-blue-600 text-white rounded-full";
+    if (reviewLater.includes(qid) && answers[qid]) return "bg-orange-300 text-black rounded-full";
+    if (reviewLater.includes(qid)) return "bg-yellow-300 text-black rounded-full";
+    if (answers[qid]) return "bg-green-300 text-black rounded-full";
+    return "bg-gray-200 text-black rounded";
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 to-slate-100">
       {/* Navbar */}
-      <header className="bg-white shadow px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <header className="bg-white shadow px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
           <BookOpen className="w-6 h-6 text-blue-600" />
-          <h1 className="text-xl font-bold text-blue-700">Quiz Platform</h1>
+          <h1 className="text-lg sm:text-xl font-bold text-blue-700">Quiz Platform</h1>
         </div>
-        <div className="text-lg font-mono bg-blue-100 px-3 py-1 rounded text-blue-700">
+        <div className="text-base sm:text-lg font-mono bg-blue-100 px-3 py-1 rounded text-blue-700">
           Time Left: {formatTime(timeLeft)}
         </div>
       </header>
 
       {/* Main */}
-      <main className="flex flex-1 w-full max-w-6xl mx-auto mt-6 px-4">
+      <main className="flex flex-col md:flex-row flex-1 w-full max-w-6xl mx-auto mt-4 sm:mt-6 px-3 sm:px-4 gap-6">
         {/* Sidebar */}
-        <div className="w-64 bg-blue-50 p-4 rounded-xl shadow mr-8 h-fit">
+        <div className="w-full md:w-64 bg-blue-50 p-4 rounded-xl shadow h-fit order-2 md:order-1">
           <h3 className="font-bold mb-2">Questions</h3>
-          <div className="grid grid-cols-4 gap-2 mb-6">
+          <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-4 gap-2 mb-6">
             {shuffledQuestions.map((question, idx) => (
               <button
                 key={question._id}
@@ -240,71 +203,44 @@ export default function QuizStart() {
                 )}`}
                 onClick={() => setCurrentIdx(idx)}
                 disabled={submitted}
-                title={
-                  reviewLater.includes(question._id) && answers[question._id]
-                    ? "Review & Answered"
-                    : reviewLater.includes(question._id)
-                    ? "Marked for Review"
-                    : answers[question._id]
-                    ? "Answered"
-                    : "Unanswered"
-                }
               >
                 {idx + 1}
               </button>
             ))}
           </div>
 
-          {/* Legend */}
           <div className="mt-2 mb-2">
             <h4 className="font-semibold mb-2 text-gray-900">Legend</h4>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 text-sm">
               {LEGEND.map((item, idx) => (
                 <div key={idx} className="flex items-center gap-2">
-                  <span
-                    className={`inline-block w-4 h-4 ${item.color} ${item.shape} border border-gray-300`}
-                  />
-                  <span className="text-sm text-gray-800">{item.label}</span>
+                  <span className={`inline-block w-4 h-4 ${item.color} ${item.shape} border border-gray-300`} />
+                  <span>{item.label}</span>
                 </div>
               ))}
-            </div>
-            <div className="mt-2 text-xs text-gray-600">
-              • <span className="font-bold">Circle</span>: Answered or Marked for Review
-              <br /> • <span className="font-bold">Square</span>: Untouched
             </div>
           </div>
         </div>
 
         {/* Quiz Content */}
-        <div className="bg-white p-8 rounded-lg border border-gray-200 shadow w-full mb-6">
-          <h2 className="text-2xl font-bold text-blue-700 mb-4">{quiz.title}</h2>
-          <p className="mb-4 text-gray-700">{quiz.description}</p>
+        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-lg border border-gray-200 shadow w-full order-1 md:order-2">
+          <h2 className="text-xl sm:text-2xl font-bold text-blue-700 mb-4">{quiz.title}</h2>
+          <p className="mb-4 text-gray-700 text-sm sm:text-base">{quiz.description}</p>
 
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (!submitted) {
-                setShowConfirm(true);
-              }
+              if (!submitted) setShowConfirm(true);
             }}
           >
             <div className="mb-6">
-              <div className="font-semibold mb-2">
+              <div className="font-semibold mb-2 text-gray-800 text-sm sm:text-base">
                 {currentIdx + 1}. {q.text}
               </div>
-              {q.image && (
-                <img
-                  src={q.image}
-                  alt="Question"
-                  className="mb-2 max-w-xs rounded"
-                />
-              )}
+              {q.image && <img src={q.image} alt="Question" className="mb-2 max-w-full sm:max-w-xs rounded" />}
               <div className="space-y-2">
                 {q.options.map((opt, i) => (
-                  <label
-                    key={i}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
+                  <label key={i} className="flex items-center gap-2 cursor-pointer text-sm sm:text-base">
                     <input
                       type="radio"
                       name={`question-${q._id}`}
@@ -320,7 +256,7 @@ export default function QuizStart() {
               </div>
               <button
                 type="button"
-                className={`mt-2 px-3 py-1 rounded ${
+                className={`mt-3 px-3 py-1 rounded text-sm sm:text-base ${
                   reviewLater.includes(q._id)
                     ? "bg-yellow-400 text-white"
                     : "bg-yellow-100 text-yellow-700"
@@ -328,17 +264,15 @@ export default function QuizStart() {
                 onClick={() => handleReviewLater(q._id)}
                 disabled={submitted}
               >
-                {reviewLater.includes(q._id)
-                  ? "Unmark Review"
-                  : "Mark for Review"}
+                {reviewLater.includes(q._id) ? "Unmark Review" : "Mark for Review"}
               </button>
             </div>
 
             {/* Navigation */}
-            <div className="flex justify-between">
+            <div className="flex flex-wrap justify-between gap-2 sm:gap-4">
               <button
                 type="button"
-                className="px-4 py-2 bg-gray-200 rounded"
+                className="px-4 py-2 bg-gray-200 rounded text-sm sm:text-base"
                 onClick={() => setCurrentIdx((i) => Math.max(0, i - 1))}
                 disabled={currentIdx === 0 || submitted}
               >
@@ -346,17 +280,15 @@ export default function QuizStart() {
               </button>
               <button
                 type="button"
-                className="px-4 py-2 bg-gray-200 rounded"
-                onClick={() =>
-                  setCurrentIdx((i) => Math.min(shuffledQuestions.length - 1, i + 1))
-                }
+                className="px-4 py-2 bg-gray-200 rounded text-sm sm:text-base"
+                onClick={() => setCurrentIdx((i) => Math.min(shuffledQuestions.length - 1, i + 1))}
                 disabled={currentIdx === shuffledQuestions.length - 1 || submitted}
               >
                 Next
               </button>
               <button
                 type="submit"
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                className="bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm sm:text-base"
                 disabled={submitted}
               >
                 Finish & Submit

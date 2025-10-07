@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { PlusCircle, Rocket, LogOut, User } from "lucide-react";
+import { PlusCircle, Rocket, LogOut, User, Home } from "lucide-react";
 
 export default function OrgHeader() {
   const { logout } = useAuth();
@@ -24,6 +24,14 @@ export default function OrgHeader() {
 
         {/* 🌐 Navigation */}
         <nav className="flex items-center gap-4">
+         <Link
+            to="/org-dashboard"
+            className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition-all duration-200"
+          >
+            <Home className="w-4 h-4" />
+            <span className="hidden sm:inline">dashboard</span>
+          </Link>
+
           <Link
             to="/org/add-que"
             className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition-all duration-200"
@@ -32,7 +40,7 @@ export default function OrgHeader() {
             <span className="hidden sm:inline">Add Questions</span>
           </Link>
            <Link
-            to="/about-user"
+            to="/org-profile"
             className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition-all duration-200"
           >
             <User className="w-4 h-4" />

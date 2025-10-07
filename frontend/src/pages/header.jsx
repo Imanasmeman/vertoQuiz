@@ -1,16 +1,18 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, LogOut, User, ListChecks, Home } from "lucide-react";
+import { BookOpen, LogOut, User, ListChecks, Home, Menu, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 const Header = () => {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
     navigate("/login");
+    setMobileOpen(false); // Close mobile menu on logout
   };
 
   const navItems = [
@@ -29,8 +31,8 @@ const Header = () => {
             <h1 className="text-xl font-bold text-gray-800">VertoQuiz</h1>
           </div>
 
-          {/* Links */}
-          <div className="flex gap-6 items-center">
+          {/* Desktop Links */}
+          <div className="hidden sm:flex gap-6 items-center">
             {navItems.map((item) => (
               <Link
                 key={item.to}
@@ -53,8 +55,48 @@ const Header = () => {
               <span className="text-sm font-medium">Logout</span>
             </button>
           </div>
+
+          {/* Mobile Menu Button */}
+          <div className="sm:hidden flex items-center">
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="text-gray-700 hover:text-blue-600 focus:outline-none"
+            >
+              {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Mobile Menu */}
+      {mobileOpen && (
+        <div className="sm:hidden bg-white border-t border-gray-200 px-4 py-3">
+          <div className="flex flex-col gap-3">
+            {navItems.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                onClick={() => setMobileOpen(false)} // Close menu on link click
+                className={`flex items-center gap-1 text-sm font-medium ${
+                  location.pathname === item.to
+                    ? "text-blue-600"
+                    : "text-gray-700 hover:text-blue-600"
+                }`}
+              >
+                {item.icon} {item.label}
+              </Link>
+            ))}
+
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-3 py-1.5 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="text-sm font-medium">Logout</span>
+            </button>
+          </div>
+        </div>
+      )}
     </nav>
   );
 };

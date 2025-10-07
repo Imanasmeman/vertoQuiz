@@ -1,6 +1,6 @@
+// src/context/AuthContext.js
 import { createContext, useContext, useState, useEffect } from "react";
 import API from "../api/api";
-import { LogOut } from "lucide-react";
 
 const AuthContext = createContext();
 
@@ -9,44 +9,39 @@ export const AuthProvider = ({ children }) => {
   const [accessToken, setAccessToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // On mount: load token from localStorage or try refresh
+  // On mount: refresh session
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      setAccessToken(token);
-      // Note: optionally fetch user here if needed
-      setLoading(false);
-    } else {
-      const checkSession = async () => {
-        try {
-    const res = await API.post("/auth/refresh", {}, { withCredentials: true });
-
-          const { accessToken: newAccessToken, user: refreshedUser } = res.data;
-          if (newAccessToken && refreshedUser) {
-            setAccessToken(newAccessToken);
-            localStorage.setItem("accessToken", newAccessToken);
-            setUser(refreshedUser);
-          } else {
-            setUser(null);
-            localStorage.removeItem("accessToken");
-            setAccessToken(null);
-          }
-        } catch {
+    const checkSession = async () => {
+      try {
+        const res = await API.post("/auth/refresh", {}, { withCredentials: true });
+        const { accessToken: newAccessToken, user: refreshedUser } = res.data;
+        if (newAccessToken && refreshedUser) {
+          setAccessToken(newAccessToken);
+          localStorage.setItem("accessToken", newAccessToken);
+          setUser(refreshedUser);
+        } else {
           setUser(null);
+          setAccessToken(null);
           localStorage.removeItem("accessToken");
-        } finally {
-          setLoading(false);
         }
-      };
-      checkSession();
-    }
+      } catch (err) {
+        console.log("Refresh failed on mount:", err.message);
+        setUser(null);
+        setAccessToken(null);
+        localStorage.removeItem("accessToken");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkSession();
   }, []);
 
   // Login function
   const login = async (email, password) => {
     const res = await API.post("/auth/login", { email, password });
     const token = res.data.accessToken;
-    const loggedInUser = res.data.user; // Please ensure your login API returns user object as well
+    const loggedInUser = res.data.user;
     setAccessToken(token);
     setUser(loggedInUser);
     localStorage.setItem("accessToken", token);
@@ -55,13 +50,18 @@ export const AuthProvider = ({ children }) => {
 
   // Logout function
   const logout = async () => {
-    await API.post("/auth/logout");
-    setAccessToken(null);
-    setUser(null);
-    localStorage.removeItem("accessToken");
+    try {
+      await API.post("/auth/logout", {}, { withCredentials: true });
+    } catch (err) {
+      console.log("Logout error:", err.message);
+    } finally {
+      setAccessToken(null);
+      setUser(null);
+      localStorage.removeItem("accessToken");
+    }
   };
 
-  // Axios interceptor for token refresh
+  // Axios interceptor to handle expired access tokens
   useEffect(() => {
     const interceptor = API.interceptors.response.use(
       (response) => response,
@@ -70,19 +70,22 @@ export const AuthProvider = ({ children }) => {
 
         if (
           error.response?.status === 401 &&
-          !originalRequest._retry &&
-          accessToken
+          !originalRequest._retry
         ) {
           originalRequest._retry = true;
+
           try {
-             const refreshRes = await API.post("/auth/refresh", {}, { withCredentials: true });
+            const refreshRes = await API.post("/auth/refresh", {}, { withCredentials: true });
             const { accessToken: newAccessToken, user: refreshedUser } = refreshRes.data;
+
             setAccessToken(newAccessToken);
             setUser(refreshedUser);
             localStorage.setItem("accessToken", newAccessToken);
+
             originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
             return API(originalRequest);
           } catch (err) {
+            console.log("Refresh failed in interceptor:", err.message);
             setUser(null);
             setAccessToken(null);
             localStorage.removeItem("accessToken");
@@ -94,22 +97,13 @@ export const AuthProvider = ({ children }) => {
       }
     );
 
-    // Cleanup interceptor on unmount
     return () => {
       API.interceptors.response.eject(interceptor);
     };
   }, [accessToken]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        accessToken,
-        login,
-        logout,
-        loading,
-      }}
-    >
+    <AuthContext.Provider value={{ user, accessToken, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

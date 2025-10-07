@@ -1,103 +1,159 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Login from "./pages/login";
-import Dashboard from "./pages/dashboard";
 import { useAuth } from "./context/AuthContext";
+import ProtectedRoute from "./ProtectedRoute";
+
+// 🧭 Pages (User)
+import Login from "./pages/login";
 import Register from "./pages/Register";
+import Dashboard from "./pages/dashboard";
 import QuizStart from "./pages/Quizstart";
 import QuizResult from "./pages/Result";
 import QuizAttemptsList from "./pages/attemtsquizz";
-
+import AttemptDetails from "./pages/AttemtsDetails";
 import Profile from "./pages/Profile";
 import About from "./pages/about";
 import Contact from "./pages/contact";
+
+// 🏢 Pages (Organization)
 import OrgDashboard from "./pages/org/OrgDashboard";
 import AddQuestions from "./pages/org/AddQuestions";
-import LaunchQuiz from "./pages/org/orgLaunchQuizz";
-//import ProtectedRoute from "./ProtectedRoute";
-import QuizAttempts from "./pages/org/OrgQuizAttempts";
-import AttemptDetails from "./pages/AttemtsDetails";
 import UploadQuestions from "./pages/org/UploadQuestions";
-
-//import OrgDashboard from "./pages/OrgDashboard"; // 👈 your organization page
+import LaunchQuiz from "./pages/org/orgLaunchQuizz";
+import QuizAttempts from "./pages/org/OrgQuizAttempts";
+import OrgProfile from "./pages/org/OrgProfile";
 
 export default function AppRouter() {
+  const { user } = useAuth();
+
   return (
     <BrowserRouter>
       <Routes>
+        {/* 🌐 Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* 👇 Student/User routes */}
-   < Route    
-  path="/dashboard"
-  element={
-    
-      <Dashboard />
-    
-  }
-/>
-          
-
+        {/* 👩‍🎓 STUDENT ROUTES */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["student"]}>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/quiz/:id/start"
           element={
-          
+            <ProtectedRoute allowedRoles={["student"]}>
               <QuizStart />
-           
+            </ProtectedRoute>
           }
         />
-
+        <Route
+          path="/quiz-result"
+          element={
+            <ProtectedRoute allowedRoles={["student"]}>
+              <QuizResult />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/quiz-attempts"
           element={
-           
+            <ProtectedRoute allowedRoles={["student"]}>
               <QuizAttemptsList />
-     
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/attempt-details/:id"
+          element={
+            <ProtectedRoute allowedRoles={["student"]}>
+              <AttemptDetails />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/about-user"
+          element={
+            <ProtectedRoute allowedRoles={["student"]}>
+              <Profile />
+            </ProtectedRoute>
           }
         />
 
-
+        {/* 🏢 ORGANIZATION ROUTES */}
         <Route
           path="/org-dashboard"
           element={
-          
-              <OrgDashboard/>
-            
+            <ProtectedRoute allowedRoles={["organization"]}>
+              <OrgDashboard />
+            </ProtectedRoute>
           }
         />
-
-  <Route
+        <Route
           path="/org/add-que"
           element={
-         
-             <AddQuestions/>
-          
+            <ProtectedRoute allowedRoles={["organization"]}>
+              <AddQuestions />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/org/upload-que"
+          element={
+            <ProtectedRoute allowedRoles={["organization"]}>
+              <UploadQuestions />
+            </ProtectedRoute>
           }
         />
         <Route
           path="/org/launch-quiz"
           element={
-            
-             <LaunchQuiz/>
-            
+            <ProtectedRoute allowedRoles={["organization"]}>
+              <LaunchQuiz />
+            </ProtectedRoute>
           }
         />
         <Route
-          path="/quiz-attempts/:quizId"
-          element={ 
-            <QuizAttempts/>
+          path="/org-profile"
+          element={
+            <ProtectedRoute allowedRoles={["organization"]}>
+              <OrgProfile/>
+            </ProtectedRoute>
           }
         />
-        
-        <Route path="/quiz-result" element={<QuizResult />} />
-        <Route path="/attempt-details/:id" element={<AttemptDetails />} />
+        <Route
+          path="/org/quiz-attempts/:quizId"
+          element={
+            <ProtectedRoute allowedRoles={["organization"]}>
+              <QuizAttempts />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ℹ️ Common public pages */}
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/about-user" element={<Profile />} />
-        
 
-        {/* Catch all */}
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        {/* 🚪 Default Redirect */}
+        <Route
+          path="*"
+          element={
+            user ? (
+              <Navigate
+                to={
+                  user.role === "organization"
+                    ? "/org-dashboard"
+                    : "/dashboard"
+                }
+                replace
+              />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
