@@ -108,7 +108,6 @@ VertoQuiz supports:
 **[Organization Side]**
 
 - My Quizzes: Shows cards for each created quiz, number of questions, simple info.  
-  ![Org Dashboard Screenshot][4]
 - Add Questions: Opens bulk upload (from org top menu).
 - Launch Quiz: UI for quiz creation, selection of questions and allowed users.
 - Quiz Attempts: See all user attempts/results for each quiz.
