@@ -29,8 +29,34 @@ export default function AppRouter() {
     <BrowserRouter>
       <Routes>
         {/* 🌐 Public Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        
+        <Route
+          path="/login"
+          element={
+            user ? (
+              <Navigate
+                to={user.role === "organization" ? "/org-dashboard" : "/dashboard"}
+                replace
+              />
+            ) : (
+              <Login />
+            )
+          }
+        />
+       <Route
+          path="/register"
+          element={
+            user ? (
+              <Navigate
+                to={user.role === "organization" ? "/org-dashboard" : "/dashboard"}
+                replace
+              />
+            ) : (
+              <Register />
+            )
+          }
+        />
+
 
         {/* 👩‍🎓 STUDENT ROUTES */}
         <Route
