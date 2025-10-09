@@ -145,7 +145,7 @@ appRouter.post("/quiz/:id/submit", authMiddleware(["student"]), async (req, res)
 appRouter.get("/quiz-attempts", authMiddleware(["student"]), async (req, res) => {
   try {
     const { id: userId } = req.user;
-    const attempts = await quizAttemptModel.find({ userId });
+    const attempts = await quizAttemptModel.find({ userId }).populate('quizId', 'title description');
     
     res.json(attempts);
   } catch (err) {
